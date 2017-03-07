@@ -1,6 +1,10 @@
 #
 # haproxy service
 #
+# In inventory - 
+# masters=[{'name': 'name1', 'address': '1.2.3.4'}]
+# infra_nodes=[{'name': 'name1', 'address': '1.2.3.5'}]
+#
 - hosts: haproxy
 
   vars:
@@ -9,8 +13,15 @@
     - name: haproxy package
       action: package name=haproxy state=installed
 
-#    - name: openshift proxy configuration
-#      action: template src=haproxy.conf.j2 dest=/etc/haproxy/haproxy.conf
-      
+    - name: openshift proxy configuration
+      action: template src=haproxy.cfg.j2 dest=/etc/haproxy/haproxy.cfg
+      notify:
+      - restart haproxy
+
     - name: haproxy service
       action: systemd name=haproxy enabled=yes state=started
+
+  handlers:
+    - name: restart haproxy
+      systemd: name=haproxy state=restarted
+      

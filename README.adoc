@@ -1,0 +1,10 @@
+== A simple container to forward HTTP(S) queries
+
+* `external_network`
+* `service_network`
+* `service_subnet`
+
+
+----
+openstack stack create -t haproxy.yaml
+----

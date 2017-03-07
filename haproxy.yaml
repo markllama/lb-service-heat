@@ -1,7 +1,7 @@
 heat_template_version: 2016-10-14
 
 description:
-  An instance for a DNS master server
+  An instance for an haproxy server. Using an existing network
   The instances are created with Heat and then configured with Ansible
 
 parameters:
@@ -47,7 +47,7 @@ parameters:
     description: >
       The Infrastructure hostname portion of the FQDN
     type: string
-    default: "ns-master"
+    default: "lb"
     constraints:
     - allowed_pattern: '[a-z0-9\-]*'
       description: Hostname must contain only characters [a-z0-9\-].
@@ -56,6 +56,7 @@ parameters:
     description: >
       All VMs will be placed in this domain
     type: string
+    default: "example.com"
 
   # Access to the VMs
   ssh_user:
