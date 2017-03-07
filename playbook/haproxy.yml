@@ -1,0 +1,16 @@
+#
+# haproxy service
+#
+- hosts: haproxy
+
+  vars:
+
+  tasks:
+    - name: haproxy package
+      action: package name=haproxy state=installed
+
+#    - name: openshift proxy configuration
+#      action: template src=haproxy.conf.j2 dest=/etc/haproxy/haproxy.conf
+      
+    - name: haproxy service
+      action: systemd name=haproxy enabled=yes state=started
