@@ -1,0 +1,6 @@
+[haproxy]
+{{ lb_address }}
+
+[haproxy:vars]
+masters=[ {%- for master in masters %}{'name': '{{ master.name }}', 'address': '{{ master.address }}'} {%- if not loop.last -%}, {% endif -%} {% endfor -%} ]
+infra_nodes=[ {%- for node in infra_nodes %}{'name': '{{ node.name }}', 'address': '{{ node.address }}'} {%- if not loop.last -%}, {% endif -%} {%- endfor -%} ]

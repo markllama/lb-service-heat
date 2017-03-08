@@ -5,7 +5,8 @@ parameters:
   external_network: public_network
   service_network: dns-network
   service_subnet: dns-subnet
-  image: rhel7
+  #image: rhel7
+  image: fedora25
   flavor: m1.small
   hostname: lb
   domain_name: osp10.e2e.bos.redhat.com

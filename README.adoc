@@ -6,5 +6,32 @@
 
 
 ----
-openstack stack create -t haproxy.yaml
+parameters:
+  external_network: public_network
+  service_network: dns-network
+  service_subnet: dns-subnet
+  image: rhel7
+  flavor: m1.small
+  hostname: lb
+  domain_name: osp10.e2e.bos.redhat.com
+  ssh_user: cloud-user
+  ssh_key_name: ocp3
+----
+
+----
+openstack stack create -e haproxy_parameters.yaml -e rhn_credentials -t haproxy.yaml 
+----
+
+
+----
+UPDATE_KEY="...."
+python bin/lb_info.py lb.osp10.e2e.bos.redhat.com dns-network --nameserver 10.19.114.138 --zone osp10.e2e.bos.redhat.com > lb_config.yaml
+jinja2-2.7 inventory.j2 lb_config.yaml > inventory.test
+export ANSIBLE_HOST_KEY_CHECKING=False
+ansible -i inventory.test --private-key=~/osp-keys/ocp3_rsa --user cloud-user --become  haproxy -m ping
+----
+
+----
+export ANSIBLE_HOST_KEY_CHECKING=False
+ansible-playbook -i inventory.test --private-key=~/osp-keys/ocp3_rsa --user cloud-user --become  playbook/haproxy.yml
 ----
