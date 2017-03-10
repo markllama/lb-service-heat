@@ -43,3 +43,8 @@ ZONE=osp10.e2e.bos.redhat.com
 python ../dns-service-heat/bin/add_a_record.py --server 10.19.114.138 --zone osp10.e2e.bos.redhat.com --key bKcZ4P2FhWKRQoWtx5F33w== devs.osp10.e2e.bos.redhat.com 10.19.114.141
 python ../dns-service-heat/bin/add_a_record.py --server 10.19.114.138 --zone osp10.e2e.bos.redhat.com --key bKcZ4P2FhWKRQoWtx5F33w== "*.apps.osp10.e2e.bos.redhat.com" 10.19.114.141
 ----
+
+----
+export DNS_SERVER=$(openstack server show -f json ns-master.osp10.e2e.bos.redhat.com  | jq '.addresses' | tr -d \" | awk '{print $2}')
+ZONE=osp10.e2e.bos.redhat.com SSH_USER=fedora IMAGE=fedora25 sh -x bin/full_service.sh
+----

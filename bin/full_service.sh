@@ -4,6 +4,9 @@ LB_SPEC=${LB_SPEC:-lb_parameters.yaml}
 LB_HOSTNAME=${LB_HOSTNAME:-lb}
 ZONE=${ZONE:-example.com}
 STACK_NAME=${STACK_NAME:-lb-service}
+SSH_USER=${SSH_USER:-cloud-user}
+IMAGE=${IMAGE:-rhel7}
+
 
 # IMPLICIT - Openstack credentials
 # OS_AUTH_URL
@@ -49,6 +52,8 @@ openstack stack create \
           -e ${LB_SPEC} ${RHN_CREDENTIALS} \
 					--parameter hostname=${LB_HOSTNAME} \
 					--parameter domain_name=${ZONE} \
+          --parameter ssh_user=$SSH_USER \
+          --parameter image=$IMAGE \
           -t haproxy.yaml \
           ${STACK_NAME}
 set +x
@@ -62,8 +67,17 @@ python bin/lb_info.py ${LB_HOSTNAME}.${ZONE} > lb_stack_data.yaml
 
 jinja2-2.7 inventory.j2 lb_stack_data.yaml > inventory
 
+#
+# Apply the playbook to the OSP instances to create a DNS service
+#
+ANSIBLE_HOST_KEY_CHECKING=False
+ansible-playbook -i inventory \
+  --become --user ${SSH_USER} --private-key ${PRIVATE_KEY_FILE} \
+  --ssh-common-args "-o StrictHostKeyChecking=no" \
+  ./playbook/haproxy.yml
+
 # Add A record for LB to DNS
-if [ -z "$DNS_UPDATE_KEY" ] then
+if [ -z "$DNS_KEY" ] ; then
 	 echo "NO DNS KEY VARIABLE SET"
 	 exit 1
 fi
@@ -73,23 +87,13 @@ python ../dns-service-heat/bin/add_a_record.py \
 			 --zone ${ZONE} \
 			 ${LB_HOSTNAME}.${ZONE} $(cut -d' ' -f2 lb_stack_data.yaml)
 
-# OPTIONAL
-# Get openshift master/infra node name/IP pairs (floating only)
+python ../dns-service-heat/bin/add_a_record.py \
+			 --server ${DNS_SERVER} \
+			 --zone ${ZONE} \
+			 devs.${ZONE} $(cut -d' ' -f2 lb_stack_data.yaml)
 
-# Install and configure haproxy on LB host
+python ../dns-service-heat/bin/add_a_record.py \
+			 --server ${DNS_SERVER} \
+			 --zone ${ZONE} \
+			 "*.apps.${ZONE}" $(cut -d' ' -f2 lb_stack_data.yaml)
 
-
-exits
-#
-# Apply the playbook to the OSP instances to create a DNS service
-#
-ansible-playbook -i inventory \
-  --become --user cloud-user --private-key ${PRIVATE_KEY_FILE} \
-  --ssh-common-args "-o StrictHostKeyChecking=no" \
-  ../dns-service-playbooks/playbooks/bind-server.yml
-
-
-#
-# Add the secondary name servers to the zone as both A and NS records
-#
-python bin/prime_slave_servers.py
