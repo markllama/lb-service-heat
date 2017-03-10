@@ -25,15 +25,17 @@ def parse_cli():
     opts.add_argument("-s", "--subzone", default="control")
     opts.add_argument("-M", "--master-pattern", default="master")
     opts.add_argument("-I", "--infra-pattern", default="infra")
-
+    
+    opts.add_argument("-n", "--netname", default=None)
 
     opts.add_argument("servername")
-    opts.add_argument("netname")
 
     return opts.parse_args()
 
-def floating_ip(server, network):
+def floating_ip(server, network=None):
     entry = None
+    if network == None:
+        network = server.addresses.keys()[0]
     for interface in server.addresses[network]:
         if interface['OS-EXT-IPS:type'] == 'floating':
             entry = {"name": server.name, "address": interface['addr']}
