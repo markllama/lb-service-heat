@@ -1,6 +1,7 @@
 #!/bin/sh
 
 LB_SPEC=${LB_SPEC:-lb_parameters.yaml}
+LB_HOSTNAME=${LB_HOSTNAME:-lb}
 ZONE=${ZONE:-example.com}
 STACK_NAME=${STACK_NAME:-lb-service}
 
@@ -46,17 +47,31 @@ function stack_complete() {
 set -x
 openstack stack create \
           -e ${LB_SPEC} ${RHN_CREDENTIALS} \
+					--parameter hostname=${LB_HOSTNAME} \
+					--parameter domain_name=${ZONE} \
           -t haproxy.yaml \
           ${STACK_NAME}
 set +x
 
 
 retry stack_complete ${STACK_NAME}
-exit
+
 
 # get LB host information from OpenStack
+python bin/lb_info.py ${LB_HOSTNAME}.${ZONE} > lb_stack_data.yaml
+
+jinja2-2.7 inventory.j2 lb_stack_data.yaml > inventory
 
 # Add A record for LB to DNS
+if [ -z "$DNS_UPDATE_KEY" ] then
+	 echo "NO DNS KEY VARIABLE SET"
+	 exit 1
+fi
+	 
+python ../dns-service-heat/bin/add_a_record.py \
+			 --server ${DNS_SERVER} \
+			 --zone ${ZONE} \
+			 ${LB_HOSTNAME}.${ZONE} $(cut -d' ' -f2 lb_stack_data.yaml)
 
 # OPTIONAL
 # Get openshift master/infra node name/IP pairs (floating only)
@@ -64,23 +79,7 @@ exit
 # Install and configure haproxy on LB host
 
 
-#
-# Extract the host information from openstack and create a yaml file with data
-# to apply to an inventory template
-#
-python bin/stack_data.py \
-       --zone $ZONE \
-       --update-key bKcZ4P2FhWKRQoWtx5F33w== \
-       > dns_stack_data.yaml
-
-#
-# create an inventory from a template and the stack host information
-#
-jinja2-2.7 ansible/inventory.j2 dns_stack_data.yaml > inventory
-
-echo "Sleeping for stack instances to stabilize"
-sleep 30
-
+exits
 #
 # Apply the playbook to the OSP instances to create a DNS service
 #
