@@ -1,2 +1,5 @@
 *.retry
 *~
+inventory
+rhn_credentials.yaml
+stack_data.yaml
