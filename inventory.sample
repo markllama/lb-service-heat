@@ -1,9 +1,0 @@
-user=fedora
-become=true
-
-[haproxy]
-1.2.3.4
-
-[haproxy:vars]
-masters=[{'name': 'master-0.ocp3.example.com', "address": "1.2.3.4"}]
-infra_nodes=[{'name': 'infra-node-0.ocp3.example.com', "address": "1.2.3.4"}]
