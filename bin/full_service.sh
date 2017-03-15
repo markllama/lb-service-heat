@@ -2,7 +2,7 @@
 
 
 function parse_args() {
-		while getopts "d:h:n:N:S:R:k:K:P:z:" arg ; do
+		while getopts "d:e:h:n:N:S:R:k:K:P:z:" arg ; do
 				case $arg in
 						h) LB_HOSTNAME=$OPTARG ;;
 						z) ZONE=$OPTARG ;;
