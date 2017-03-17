@@ -20,18 +20,18 @@ function parse_args() {
 
       # Stack creation values
       n) STACK_NAME=$OPTARG ;;
-            e) EXTERNAL_NETWORK_NAME=$OPTARG ;;
+      e) EXTERNAL_NETWORK_NAME=$OPTARG ;;
       p) PRIVATE_NETWORK_NAME=$OPTARG ;;
       P) PRIVATE_SUBNET_NAME=$OPTARG ;;
-            S) SERVER_SPEC=$OPTARG ;;
-            R) RHN_CREDENTIALS_SPEC=$OPTARG ;;
-            k) SSH_KEY_NAME=$OPTARG ;;
-            K) PRIVATE_KEY_FILE=$OPTARG ;;
+      S) SERVER_SPEC=$OPTARG ;;
+      R) RHN_CREDENTIALS_SPEC=$OPTARG ;;
+      k) SSH_KEY_NAME=$OPTARG ;;
+      K) PRIVATE_KEY_FILE=$OPTARG ;;
 
       C) NO_STACK=false ;;
-            A) NO_CONFIGURE=false ;;
+      A) NO_CONFIGURE=false ;;
 
-            h) usage && exit
+      h) usage && exit
     esac
   done
 }
@@ -145,6 +145,7 @@ function configure_lb_services() {
 parse_args $@
 set_defaults
 
+if [ -z "
 create_stack
 
 retry stack_complete ${STACK_NAME}
