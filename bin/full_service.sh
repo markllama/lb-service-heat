@@ -1,31 +1,44 @@
 #!/bin/sh
 
+function usage() {
+  cat <<EOF
+usage sh bin/full_service.sh [options]
+
+OPTIONS
+
+EOF
+}
 
 function parse_args() {
-		while getopts "d:e:h:n:N:S:R:k:K:P:z:" arg ; do
-				case $arg in
-						h) LB_HOSTNAME=$OPTARG ;;
-						z) ZONE=$OPTARG ;;
+  while getopts "A:C:d:e:h:k:K:l:n:k:K:p:P:R:S:u:z:" arg ; do
+    case $arg in
+      l) LB_HOSTNAME=$OPTARG ;;
+      z) ZONE=$OPTARG ;;
 
-						d) DNS_SERVER=$OPTARG ;;
-						k) DNS_UPDATE_KEY=$OPTARG ;;
-						
-						# Stack creation values
-						N) STACK_NAME=$OPTARG ;;
+      d) DNS_SERVER=$OPTARG ;;
+      u) DNS_UPDATE_KEY=$OPTARG ;;
+
+      # Stack creation values
+      n) STACK_NAME=$OPTARG ;;
             e) EXTERNAL_NETWORK_NAME=$OPTARG ;;
-						n) PRIVATE_NETWORK_NAME=$OPTARG ;;
-						s) PRIVATE_SUBNET_NAME=$OPTARG ;;
+      p) PRIVATE_NETWORK_NAME=$OPTARG ;;
+      P) PRIVATE_SUBNET_NAME=$OPTARG ;;
             S) SERVER_SPEC=$OPTARG ;;
             R) RHN_CREDENTIALS_SPEC=$OPTARG ;;
-            K) SSH_KEY_NAME=$OPTARG ;;
-            P) PRIVATE_KEY_FILE=$OPTARG ;;
-				esac
-		done
+            k) SSH_KEY_NAME=$OPTARG ;;
+            K) PRIVATE_KEY_FILE=$OPTARG ;;
+
+      C) NO_STACK=false ;;
+            A) NO_CONFIGURE=false ;;
+
+            h) usage && exit
+    esac
+  done
 }
 
 function set_defaults() {
-		LB_HOSTNAME=${LB_HOSTNAME:-lb}
-		ZONE=${ZONE:-example.com}
+  LB_HOSTNAME=${LB_HOSTNAME:-lb}
+  ZONE=${ZONE:-example.com}
 
     # == OSP settings ==
     #
@@ -54,6 +67,10 @@ function set_defaults() {
     PRIVATE_KEY_FILE=${PRIVATE_KEY_FILE:-~/.ssh/id_rsa}
 }
 
+function check_defaults() {
+  echo check defaults
+}
+
 function retry() {
     # cmd = $@
     local POLL_TRY=0
@@ -63,8 +80,8 @@ function retry() {
     while ! $@ ; do
         [ $(($POLL_TRY % 6)) -eq 0 ] && echo -n $(($POLL_TRY * $POLL_INTERVAL)) || echo -n .
         echo -n .
-		    sleep $POLL_INTERVAL
-		    POLL_TRY=$(($POLL_TRY + 1))
+      sleep $POLL_INTERVAL
+      POLL_TRY=$(($POLL_TRY + 1))
     done
     local END=$(date +%s)
     local DURATION=$(($END - $START))
@@ -90,12 +107,12 @@ function create_stack() {
 }
 
 function stack_status() {
-		openstack stack show $1 -f json | jq '.stack_status' | tr -d \"
+  openstack stack show $1 -f json | jq '.stack_status' | tr -d \"
 }
 
 function stack_complete() {
-		local STATUS=$(stack_status $1)
-		[ ${STATUS} == 'CREATE_COMPLETE' -o ${STATUS} == 'CREATE_FAILED' ]
+  local STATUS=$(stack_status $1)
+  [ ${STATUS} == 'CREATE_COMPLETE' -o ${STATUS} == 'CREATE_FAILED' ]
 }
 
 function ssh_user_from_stack() {
@@ -106,19 +123,19 @@ function generate_inventory() {
     # Write a YAML file as input to jinja to create the inventory
     # master and slave name/ip information comes from OSP
 
-		python bin/lb_info.py ${LB_HOSTNAME}.${ZONE} > stack_data.yaml
-		jinja2-2.7 inventory.j2 stack_data.yaml > inventory
+  python bin/lb_info.py ${LB_HOSTNAME}.${ZONE} > stack_data.yaml
+  jinja2-2.7 inventory.j2 stack_data.yaml > inventory
 }
 
 function configure_lb_services() {
-		SSH_USER_NAME=$(ssh_user_from_stack ${STACK_NAME})
+  SSH_USER_NAME=$(ssh_user_from_stack ${STACK_NAME})
 
-		export ANSIBLE_HOST_KEY_CHECKING=False
-		ansible-playbook \
-				-i inventory \
-				--become --user ${SSH_USER_NAME} \
-				--private-key ${PRIVATE_KEY_FILE} \
-				playbooks/haproxy.yml
+  export ANSIBLE_HOST_KEY_CHECKING=False
+  ansible-playbook \
+    -i inventory \
+    --become --user ${SSH_USER_NAME} \
+    --private-key ${PRIVATE_KEY_FILE} \
+    playbooks/haproxy.yml
 }
 
 # ============================================================================
@@ -133,8 +150,8 @@ create_stack
 retry stack_complete ${STACK_NAME}
 
 if [ "$(stack_status ${STACK_NAME})" == "CREATE_FAILED" ] ; then
-		echo "Create failed"
-		exit 1
+  echo "Create failed"
+  exit 1
 fi
 
 generate_inventory
@@ -143,16 +160,16 @@ configure_lb_services
 LB_IPADDRESS=$(grep lb_address stack_data.yaml | awk '{print $2}')
 
 if [ ! -z "$DNS_SERVER" ] ; then
-		python ../dns-service-heat/bin/add_a_record.py \
-					 -s ${DNS_SERVER} -k "${DNS_UPDATE_KEY}" -z ${ZONE} \
-					 ${LB_HOSTNAME} ${LB_IPADDRESS} 
+  python ../dns-service-heat/bin/add_a_record.py \
+      -s ${DNS_SERVER} -k "${DNS_UPDATE_KEY}" -z ${ZONE} \
+      ${LB_HOSTNAME} ${LB_IPADDRESS} 
 
-		python ../dns-service-heat/bin/add_a_record.py \
-					 -s ${DNS_SERVER} -k "${DNS_UPDATE_KEY}" -z ${ZONE} \
-					 devs ${LB_IPADDRESS} 
+  python ../dns-service-heat/bin/add_a_record.py \
+      -s ${DNS_SERVER} -k "${DNS_UPDATE_KEY}" -z ${ZONE} \
+      devs ${LB_IPADDRESS} 
 
-		python ../dns-service-heat/bin/add_a_record.py \
-					 -s ${DNS_SERVER} -k "${DNS_UPDATE_KEY}" -z ${ZONE} \
-					 '*.apps' ${LB_IPADDRESS} 
+  python ../dns-service-heat/bin/add_a_record.py \
+      -s ${DNS_SERVER} -k "${DNS_UPDATE_KEY}" -z ${ZONE} \
+      '*.apps' ${LB_IPADDRESS} 
 
 fi
