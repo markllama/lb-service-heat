@@ -10,7 +10,7 @@ EOF
 }
 
 function parse_args() {
-  while getopts "A:C:d:e:h:k:K:l:n:k:K:p:P:R:S:u:z:" arg ; do
+  while getopts "ACd:e:h:k:K:l:n:k:K:p:P:R:S:u:z:" arg ; do
     case $arg in
       l) LB_HOSTNAME=$OPTARG ;;
       z) ZONE=$OPTARG ;;
@@ -145,10 +145,11 @@ function configure_lb_services() {
 parse_args $@
 set_defaults
 
-if [ -z "
-create_stack
+if [ -z "${NO_STACK}" ] ; then
+		create_stack
 
-retry stack_complete ${STACK_NAME}
+		retry stack_complete ${STACK_NAME}
+fi
 
 if [ "$(stack_status ${STACK_NAME})" == "CREATE_FAILED" ] ; then
   echo "Create failed"
