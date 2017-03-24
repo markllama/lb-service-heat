@@ -20,7 +20,7 @@ def parse_cli():
     opts.add_argument("-u", "--username", default=os.environ['OS_USERNAME'])
     opts.add_argument("-p", "--password", default=os.environ['OS_PASSWORD'])
     opts.add_argument("-P", "--project-id", default=os.environ['OS_PROJECT_NAME'])
-    opts.add_option("-d", "--user-domain", default=os.getenv('OS_USER_DOMAIN_NAME'))
+    opts.add_argument("-d", "--user-domain", default=os.getenv('OS_USER_DOMAIN_NAME'))
     opts.add_argument("-U", "--auth-url", default=os.environ['OS_AUTH_URL'])
 
     opts.add_argument("-m", "--nameserver")
