@@ -2,7 +2,12 @@
 
 import os,re
 from argparse import ArgumentParser
-from novaclient import client
+
+from keystoneclient.auth.identity import v3 as ks_v3
+from keystoneclient import session as ks_session
+from keystoneclient.v3 import client as ksclient
+
+from novaclient import client as novaclient
 
 # python2-dns
 import dns.query
@@ -14,7 +19,8 @@ def parse_cli():
     opts = ArgumentParser()
     opts.add_argument("-u", "--username", default=os.environ['OS_USERNAME'])
     opts.add_argument("-p", "--password", default=os.environ['OS_PASSWORD'])
-    opts.add_argument("-P", "--project", default=os.environ['OS_TENANT_NAME'])
+    opts.add_argument("-P", "--project-id", default=os.environ['OS_PROJECT_NAME'])
+    opts.add_option("-d", "--user-domain", default=os.getenv('OS_USER_DOMAIN_NAME'))
     opts.add_argument("-U", "--auth-url", default=os.environ['OS_AUTH_URL'])
 
     opts.add_argument("-m", "--nameserver")
@@ -56,12 +62,14 @@ def add_a_record(name,zone,ipv4addr,master,key):
 if __name__ == "__main__":
     opts = parse_cli()
 
-    nova = client.Client("2.0",
-                         opts.username,
-                         opts.password,
-                         opts.project,
-                         opts.auth_url)
-
+    auth = ks_v3.Password(auth_url=opts.auth_url,
+                       username=opts.username,
+                       password=opts.password,
+                       user_domain_name=opts.user_domain,
+                       project_id=opts.project_id)
+    sess = ks_session.Session(auth=auth)
+    keystone = ksclient.Client(session=sess)
+    nova = novaclient.Client(2, session=keystone.session)
     
     host = nova.servers.find(name=opts.servername)
 
