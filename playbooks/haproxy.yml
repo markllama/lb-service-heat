@@ -21,7 +21,19 @@
     - name: haproxy service
       action: systemd name=haproxy enabled=yes state=started
 
+    - name: firewalld package
+      action: package name=firewalld state=installed
+
+    - name: firewalld service
+      action: systemd name=firewalld enabled=yes state=started
+
+    - name: http port
+      action: firewalld service=http permanent=true state=enabled
+    - name: https port
+      action: firewalld service=https permanent=true state=enabled
+    - name: alternate https port
+      action: firewalld port=8443/tcp permanent=true state=enabled
+
   handlers:
     - name: restart haproxy
       systemd: name=haproxy state=restarted
-      
