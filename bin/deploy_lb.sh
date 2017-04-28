@@ -123,8 +123,7 @@ function generate_inventory() {
     # Write a YAML file as input to jinja to create the inventory
     # master and slave name/ip information comes from OSP
 
-  python bin/lb_info.py ${LB_HOSTNAME}.${ZONE} > stack_data.yaml
-  jinja2-2.7 inventory.j2 stack_data.yaml > inventory
+  python bin/lb_info.py ${LB_HOSTNAME}.${ZONE} | python bin/transform.py inventory.j2 > inventory
 }
 
 function configure_lb_services() {
@@ -158,6 +157,8 @@ fi
 
 generate_inventory
 configure_lb_services
+
+exit
 
 LB_IPADDRESS=$(grep lb_address stack_data.yaml | awk '{print $2}')
 
