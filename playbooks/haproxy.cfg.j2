@@ -12,6 +12,7 @@ global
 
 defaults
     log                     global
+    mode                    http
     option                  httplog
     option                  dontlognull
     option http-server-close
@@ -33,36 +34,36 @@ listen  stats :9000
 		stats refresh 30
 		mode http
 
-frontend  main *:80
+frontend  main80 *:80
     default_backend             router80
 
 backend router80
     balance source
-    mode tcp
+    mode http 
     # INFRA_80
     #server infra-node-0.%OCP3_DOMAIN% %INFRA_0_IP%:80 check
 {% for host in infra_nodes %}
     server {{ host.name }} {{ host.address }}:80 check
 {% endfor %}
 
-frontend  main *:443
+frontend  main443 *:443
     default_backend             router443
 
 backend router443
     balance source
-    mode tcp
+    mode http
     # INFRA_443
     #server infra-node-0.%OCP3_DOMAIN% %INFRA_0_IP%:443 check
 {% for host in infra_nodes %}
     server {{ host.name }} {{ host.address }}:443 check
 {% endfor %}
 
-frontend  main *:8443
+frontend  main8443 *:8443
     default_backend             mgmt8443
 
 backend mgmt8443
     balance source
-    mode tcp
+    mode http
     # MASTERS
     #server master-0.%OCP3_DOMAIN% %MASTER_0_IP%:8443 check
     # INFRA_443

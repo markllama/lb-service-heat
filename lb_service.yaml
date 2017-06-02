@@ -243,6 +243,9 @@ resources:
           port_range_max: 22
         - direction: ingress
           protocol: tcp
+          port_range_min: 80
+          port_range_max: 80
+          protocol: tcp
           port_range_min: 88
           port_range_max: 88
         - direction: ingress
