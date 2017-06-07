@@ -123,8 +123,9 @@ function generate_inventory() {
     # Write a YAML file as input to jinja to create the inventory
     # master and slave name/ip information comes from OSP
 
-  python bin/lb_info.py ${LB_HOSTNAME}.${ZONE} > stack_data.yaml
-  jinja2-2.7 inventory.j2 stack_data.yaml > inventory
+    python bin/lb_info.py ${LB_HOSTNAME}.${ZONE} > stack_data.yaml
+    #jinja2-2.7 inventory.j2 stack_data.yaml > inventory
+    python bin/transform.py inventory.j2 < stack_data.yaml > inventory
 }
 
 function configure_lb_services() {
@@ -161,15 +162,15 @@ configure_lb_services
 LB_IPADDRESS=$(grep lb_address stack_data.yaml | awk '{print $2}')
 
 if [ ! -z "$DNS_SERVER" ] ; then
-  python ../dns-service-heat/bin/add_a_record.py \
+  python bin/add_a_record.py \
       -s ${DNS_SERVER} -k "${DNS_UPDATE_KEY}" -z ${ZONE} \
       ${LB_HOSTNAME} ${LB_IPADDRESS} 
 
-  python ../dns-service-heat/bin/add_a_record.py \
+  python bin/add_a_record.py \
       -s ${DNS_SERVER} -k "${DNS_UPDATE_KEY}" -z ${ZONE} \
       devs ${LB_IPADDRESS} 
 
-  python ../dns-service-heat/bin/add_a_record.py \
+  python bin/add_a_record.py \
       -s ${DNS_SERVER} -k "${DNS_UPDATE_KEY}" -z ${ZONE} \
       '*.apps' ${LB_IPADDRESS} 
 

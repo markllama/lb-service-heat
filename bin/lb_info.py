@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-import os,re
+import os,re,sys
 from argparse import ArgumentParser
+from keystoneauth1 import loading
+from keystoneauth1 import session
 from novaclient import client
 
 # python2-dns
@@ -14,7 +16,8 @@ def parse_cli():
     opts = ArgumentParser()
     opts.add_argument("-u", "--username", default=os.environ['OS_USERNAME'])
     opts.add_argument("-p", "--password", default=os.environ['OS_PASSWORD'])
-    opts.add_argument("-P", "--project", default=os.environ['OS_TENANT_NAME'])
+    opts.add_argument("-P", "--project", default=os.environ['OS_PROJECT_ID'])
+    opts.add_argument("-D", "--domain", default=os.environ['OS_USER_DOMAIN_NAME'])
     opts.add_argument("-U", "--auth-url", default=os.environ['OS_AUTH_URL'])
 
     opts.add_argument("-m", "--nameserver")
@@ -56,28 +59,29 @@ def add_a_record(name,zone,ipv4addr,master,key):
 if __name__ == "__main__":
     opts = parse_cli()
 
-    nova = client.Client("2.0",
-                         opts.username,
-                         opts.password,
-                         opts.project,
-                         opts.auth_url)
+    loader = loading.get_plugin_loader('password')
+    auth = loader.load_from_options(auth_url=opts.auth_url,
+                                    username=opts.username,
+                                    password=opts.password,
+                                    user_domain_name=opts.domain,
+                                    project_id=opts.project)
+    sess = session.Session(auth=auth)
+    nova = client.Client("2", session=sess)
 
-    
     host = nova.servers.find(name=opts.servername)
 
     host_info = floating_ip(host, opts.netname)
-    
+
     # Add the loadbalancer to the DNS database
     if opts.nameserver:
         record = floating_ip(host, opts.netname)
-        add_a_record(
+        response = add_a_record(
             host_part(record['name'], opts.zone),
             opts.zone,
             record['address'],
             opts.nameserver,
             opts.update_key
         )
-
 
     # find the masters and infra servers
 
