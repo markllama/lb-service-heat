@@ -112,7 +112,7 @@ function stack_status() {
 
 function stack_complete() {
   local STATUS=$(stack_status $1)
-  [ ${STATUS} == 'CREATE_COMPLETE' -o ${STATUS} == 'CREATE_FAILED' ]
+  [ "${STATUS}" == 'CREATE_COMPLETE' -o "${STATUS}" == 'CREATE_FAILED' ]
 }
 
 function ssh_user_from_stack() {
@@ -146,9 +146,8 @@ parse_args $@
 set_defaults
 
 if [ -z "${NO_STACK}" ] ; then
-		create_stack
-
-		retry stack_complete ${STACK_NAME}
+  create_stack
+  retry stack_complete ${STACK_NAME}
 fi
 
 if [ "$(stack_status ${STACK_NAME})" == "CREATE_FAILED" ] ; then
