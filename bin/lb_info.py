@@ -16,8 +16,8 @@ def parse_cli():
     opts = ArgumentParser()
     opts.add_argument("-u", "--username", default=os.environ['OS_USERNAME'])
     opts.add_argument("-p", "--password", default=os.environ['OS_PASSWORD'])
-    opts.add_argument("-P", "--project", default=os.environ['OS_PROJECT_ID'])
-    opts.add_argument("-D", "--domain", default=os.environ['OS_USER_DOMAIN_NAME'])
+    opts.add_argument("-T", "--tenant", default=os.environ['OS_TENANT_NAME'])
+    #opts.add_argument("-D", "--domain", default=os.environ['OS_USER_DOMAIN_NAME'])
     opts.add_argument("-U", "--auth-url", default=os.environ['OS_AUTH_URL'])
 
     opts.add_argument("-m", "--nameserver")
@@ -63,8 +63,8 @@ if __name__ == "__main__":
     auth = loader.load_from_options(auth_url=opts.auth_url,
                                     username=opts.username,
                                     password=opts.password,
-                                    user_domain_name=opts.domain,
-                                    project_id=opts.project)
+#                                    user_domain_name=opts.domain,
+                                    tenant_name=opts.tenant)
     sess = session.Session(auth=auth)
     nova = client.Client("2", session=sess)
 

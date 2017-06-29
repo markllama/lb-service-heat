@@ -32,7 +32,7 @@
         zone: public
         service: http
         state: enabled
-        permenent: yes
+        permanent: yes
         immediate: yes
 
     - name: https port
@@ -40,7 +40,7 @@
         zone: public
         service: https
         state: enabled
-        permenent: yes
+        permanent: yes
         immediate: yes
 
     - name: http-alt port
@@ -48,7 +48,7 @@
         zone: public
         port: 8443/tcp
         state: enabled
-        permenent: yes
+        permanent: yes
         immediate: yes
 
   handlers:

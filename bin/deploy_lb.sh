@@ -89,6 +89,10 @@ function retry() {
     echo Completed in $DURATION seconds
 }
 
+function python_dns_installed() {
+    rpm -q python-dns > /dev/null
+}
+
 function create_stack() {
 
     # RHN credentials are only needed for RHEL images in the SERVER SPEC
@@ -145,6 +149,8 @@ function configure_lb_services() {
 
 parse_args $@
 set_defaults
+
+python_dns_installed || (echo "FATAL: Missing required RPM python-dns" ; exit 1)
 
 if [ -z "${NO_STACK}" ] ; then
   create_stack
