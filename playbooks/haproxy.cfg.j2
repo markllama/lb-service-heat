@@ -12,8 +12,6 @@ global
 
 defaults
     log                     global
-    mode                    http
-    option                  httplog
     option                  dontlognull
     option http-server-close
     option                  redispatch
@@ -39,7 +37,7 @@ frontend  main80 *:80
 
 backend router80
     balance source
-    mode http 
+    mode tcp
     # INFRA_80
     #server infra-node-0.%OCP3_DOMAIN% %INFRA_0_IP%:80 check
 {% for host in infra_nodes %}
@@ -51,7 +49,7 @@ frontend  main443 *:443
 
 backend router443
     balance source
-    mode http
+    mode tcp
     # INFRA_443
     #server infra-node-0.%OCP3_DOMAIN% %INFRA_0_IP%:443 check
 {% for host in infra_nodes %}
@@ -63,7 +61,7 @@ frontend  main8443 *:8443
 
 backend mgmt8443
     balance source
-    mode http
+    mode tcp
     # MASTERS
     #server master-0.%OCP3_DOMAIN% %MASTER_0_IP%:8443 check
     # INFRA_443

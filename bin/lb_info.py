@@ -86,3 +86,26 @@ if __name__ == "__main__":
     # find the masters and infra servers
 
     print "lb_address: %s" % host_info['address']
+
+    servers = nova.servers.list()
+
+    print "masters:"
+    for server in  [s for s in servers if re.match("^%s" % opts.master_pattern, s.name)]:
+        #print server.__dict__
+        #print server.addresses['control-network'][0]
+
+        record = floating_ip(server, "control-network")
+        #print record
+        print "  - name: " + record['name']
+        print "    address: " + record['address']
+
+    print "infra_nodes:"
+    for server in  [s for s in servers if re.match("^%s" % opts.infra_pattern, s.name)]:
+        #print server.__dict__
+        #print server.addresses['control-network'][0]
+
+        record = floating_ip(server, "control-network")
+        #print record
+        print "  - name: " + record['name']
+        print "    address: " + record['address']
+    
