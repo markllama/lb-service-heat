@@ -256,3 +256,10 @@ resources:
           protocol: tcp
           port_range_min: 8443
           port_range_max: 8443
+
+outputs:
+   lb:
+    value:
+      lb: 
+        name: {get_param: hostname}
+        ip_address: {get_attr: [floating_ip, floating_ip_address]}

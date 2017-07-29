@@ -1,0 +1,99 @@
+---
+- name: Deploy a load balancer
+  hosts: localhost
+  become: no
+  gather_facts: no
+  vars:
+    stack_name: lb-service
+    flavor: m1.small
+  tasks:
+
+  - name: Check whether the stack exists already
+    command: "openstack stack show {{ stack_name }}"
+    ignore_errors: yes
+    register: stack_check
+
+  - name: Create the Heat Stack
+    os_stack:
+      name: "{{ stack_name }}"
+      template: heat/lb_service.yaml
+      parameters:
+        image: "{{ image }}"
+        flavor: "{{ flavor }}"
+        external_network: "{{ external_network }}"
+        service_network: "{{ service_network }}"
+        service_subnet: "{{ service_subnet }}"
+        ssh_user: "{{ ssh_user }}"
+        ssh_key_name: "{{ ssh_key_name }}"
+    register: stack_output
+    when: stack_check.rc != 0
+
+  - name: Register stack output
+    command: >
+      openstack stack output show -f value -c output_value
+      {{ stack_name }} lb
+    register: stack_output_raw
+
+  - set_fact:
+      stack_output: "{{ stack_output_raw.stdout|from_json }}"
+
+  - name: Add the lb to the inventory
+    add_host:
+      name: "{{ stack_output.lb.ip_address }}"
+      groups: lb
+      #hostname: [" {{ stack_output.name }} "]
+      ansible_user: "{{ ssh_user }}"
+
+  - name: Wait for the deployed servers
+    wait_for:
+      host: "{{ item }}"
+      port: 22
+    with_items: "{{ groups['all'] }}"
+
+  # NOTE(shadower): This is necessary until we switch to Ansible 2.3,
+  # which has the `wait_for_connection` module for this exact purpose.
+  # https://docs.ansible.com/ansible/wait_for_connection_module.html
+  - name: Verify the servers can be SSHd into
+    command: >
+      {{ansible_ssh_executable}} {{ansible_ssh_common_args}}
+      {% if ansible_ssh_private_key_file|default(None) %}
+          -i {{ ansible_ssh_private_key_file -}}
+      {% endif %}
+      -oBatchMode=yes
+      -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null'
+      -p {{ansible_port|default(22)}} {{ssh_user}}@{{ item }} /bin/true
+    register: result
+    retries: 10
+    delay: 1
+    until: result.rc == 0
+    with_items: "{{ groups['all'] }}"
+
+# ======================================================================
+# After this, the stack and hosts exists
+# ======================================================================
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: Subscribe to RHN and auto-attach
+    redhat_subscription:
+      username: "{{ rhn_username }}"
+      password: "{{ rhn_password }}"
+      autosubscribe: true
+      server_hostname: "{{ sat6_hostname|default(None) }}"
+      org_id: "{{ sat6_organization|default(None) }}"
+      activationkey: "{{ sat6_activationkey|default(None) }}"
+    when: rhn_username|default and rhn_password|default and rhn_pool|default == ""
+
+  - name: Subscribe to RHN and attach a pool
+    redhat_subscription:
+      username: "{{ rhn_username }}"
+      password: "{{ rhn_password }}"
+      pool_ids: ["{{ rhn_pool }}"]
+      server_hostname: "{{ sat6_hostname|default(None) }}"
+      org_id: "{{ sat6_organization|default(None) }}"
+      activationkey: "{{ sat6_activationkey|default(None) }}"
+    when: rhn_username|default and rhn_password|default and rhn_pool|default
+
+- include ansible/haproxy.yml
