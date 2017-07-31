@@ -6,6 +6,7 @@
   vars:
     stack_name: lb-service
     flavor: m1.small
+    domain_name: example.com
   tasks:
 
   - name: Check whether the stack exists already
@@ -25,6 +26,7 @@
         service_subnet: "{{ service_subnet }}"
         ssh_user: "{{ ssh_user }}"
         ssh_key_name: "{{ ssh_key_name }}"
+        domain_name: "{{ domain_name }}"
     register: stack_output
     when: stack_check.rc != 0
 
@@ -96,4 +98,4 @@
       activationkey: "{{ sat6_activationkey|default(None) }}"
     when: rhn_username|default and rhn_password|default and rhn_pool|default
 
-- include ansible/haproxy.yml
+- include: ansible/haproxy.yml

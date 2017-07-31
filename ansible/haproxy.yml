@@ -1,11 +1,8 @@
 #
 # haproxy service
 #
-# In inventory - 
-# masters=[{'name': 'name1', 'address': '1.2.3.4'}]
-# infra_nodes=[{'name': 'name1', 'address': '1.2.3.5'}]
-#
-- hosts: haproxy
+- hosts: all
+  become: true
 
   vars:
 
