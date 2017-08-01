@@ -10,11 +10,6 @@
     - name: haproxy package
       action: package name=haproxy state=installed
 
-    - name: openshift proxy configuration
-      action: template src=haproxy.cfg.j2 dest=/etc/haproxy/haproxy.cfg
-      notify:
-      - restart haproxy
-
     - name: haproxy service
       action: systemd name=haproxy enabled=yes state=started
 
@@ -48,6 +43,29 @@
         permanent: yes
         immediate: yes
 
+- hosts: localhost
+  become: false
+  tags:
+  - configure
+
+  tasks:
+    - name: Find Masters and Infrastructure Nodes
+      os_server_facts:
+        pattern: "(master|infra-node)-[0-9].control.{{ domain_name }}"
+
+    - name: Find Floating IP Addresses
+      os_floating_ip_facts:
+
+- hosts: all
+  become: true
+  tags: configure
+  tasks:
+    - name: openshift proxy configuration
+      action: template src=haproxy.cfg.j2 dest=/etc/haproxy/haproxy.cfg
+      notify:
+      - restart haproxy
+
   handlers:
     - name: restart haproxy
       systemd: name=haproxy state=restarted
+

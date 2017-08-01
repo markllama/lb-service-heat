@@ -35,9 +35,13 @@
       openstack stack output show -f value -c output_value
       {{ stack_name }} lb
     register: stack_output_raw
+    tags:
+      - configure
 
   - set_fact:
       stack_output: "{{ stack_output_raw.stdout|from_json }}"
+    tags:
+      - configure
 
   - name: Add the lb to the inventory
     add_host:
@@ -45,6 +49,8 @@
       groups: lb
       #hostname: [" {{ stack_output.name }} "]
       ansible_user: "{{ ssh_user }}"
+    tags:
+      - configure
 
   - name: Wait for the deployed servers
     wait_for:
