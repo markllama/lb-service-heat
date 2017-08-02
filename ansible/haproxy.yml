@@ -49,12 +49,13 @@
   - configure
 
   tasks:
+    - name: Find Floating IP Addresses
+      os_floating_ip_facts:
+
     - name: Find Masters and Infrastructure Nodes
       os_server_facts:
         pattern: "(master|infra-node)-[0-9].control.{{ domain_name }}"
 
-    - name: Find Floating IP Addresses
-      os_floating_ip_facts:
 
 - hosts: all
   become: true

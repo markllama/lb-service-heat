@@ -10,7 +10,16 @@ def ips(net_string):
         (net, ip_string) = net_record.split("=")
         ip_list = ip_string.split(", ")
         for ip in ip_list:
-            ips[ip] = dict(network = net, type = "unknown")
+            try:
+                if ip in ansible_facts['floating_ips']:
+                    iptype = "floating"
+                else:
+                    iptype = "fixed"
+            except Error e:
+                iptype = e
+
+            ips[ip] = dict(network = net, type = iptype)
+            
     return ips
     
 def main():
